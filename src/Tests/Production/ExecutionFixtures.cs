@@ -116,7 +116,7 @@ internal sealed class FakeBackend(FakeDiscovery discovery) : IStorageWriteBacken
     /// <summary>MBR-style behaviour: the drive letter does not follow a moved partition.</summary>
     public bool RelocateDropsLetter { get; set; }
 
-    public RelocationResult RelocatePartition(int d, PartitionTarget target, long offset, Action<long, long>? checkpoint)
+    public RelocationResult RelocatePartition(int d, PartitionTarget target, long offset, Action<long, long>? checkpoint, bool physicalTestDisk = false)
     {
         var p = target.PartitionNumber;
         RelocationResult result = new("AB".PadRight(64, '0'), "AB".PadRight(64, '0'), 0, 0, "test");

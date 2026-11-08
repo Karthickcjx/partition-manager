@@ -191,7 +191,7 @@ internal sealed class JournaledBackend(IStorageWriteBackend inner,IOperationJour
     /// 16 MiB inspection limit. A checkpoint that cannot be written never aborts a copy in progress (stopping an
     /// overlapping copy half-way is the worst outcome); the miss is recorded at the end.
     /// </summary>
-    public RelocationResult RelocatePartition(int d,PartitionTarget p,long offset,Action<long,long>? checkpoint)
+    public RelocationResult RelocatePartition(int d,PartitionTarget p,long offset,Action<long,long>? checkpoint,bool physicalTestDisk=false)
     {
         journal.Record("RelocationPlanned",$"partition {p.PartitionNumber}: {p.SizeBytes} bytes from {p.OffsetBytes} to {offset}");
         long n=0, missed=0;
@@ -204,7 +204,7 @@ internal sealed class JournaledBackend(IStorageWriteBackend inner,IOperationJour
                 catch(Exception ex) when(ex is IOException or UnauthorizedAccessException) { missed++; }
             }
             checkpoint?.Invoke(at,copied);
-        }));
+        },physicalTestDisk));
         if(missed>0) journal.Record("CheckpointsMissed",$"{missed} checkpoint record(s) could not be written");
         return result;
     }

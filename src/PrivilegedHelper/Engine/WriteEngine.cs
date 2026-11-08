@@ -51,7 +51,7 @@ public interface IStorageWriteBackend
     /// the partition entry is rewritten through IOCTL_DISK_SET_DRIVE_LAYOUT_EX. <paramref name="checkpoint"/> receives
     /// (chunk offset, bytes copied) after each verified chunk.
     /// </summary>
-    RelocationResult RelocatePartition(int diskNumber, PartitionTarget source, long newOffsetBytes, Action<long, long>? checkpoint) =>
+    RelocationResult RelocatePartition(int diskNumber, PartitionTarget source, long newOffsetBytes, Action<long, long>? checkpoint, bool physicalTestDisk = false) =>
         throw new StorageWriteException("Block-level relocation is not available in this backend.");
 }
 
@@ -142,11 +142,11 @@ public sealed partial class WriteEngine(IDiskDiscoveryService discovery, IStorag
             if (!disk.IsVirtual)
             {
                 // Test machines only: an administrator-enrolled physical disk, in-place shrink/extend via MSFT_Partition.Resize.
-                if (!policy.AllowsPhysicalResize(disk, request.Kind))
+                if (!policy.AllowsPhysicalTest(disk, request.Kind, partition))
                     return Reject("PHYSICAL_DISK", $"{disk.Title} is a physical disk. Physical-disk writes are not enabled in this version" +
-                                  (policy.PhysicalTestDiskIds.Count > 0 ? " (an enrolled test disk allows only in-place shrink and extend)." : "."));
+                                  (policy.IsEnrolledPhysicalTestDisk(disk) ? " (on an enrolled test disk the system, EFI, MSR and recovery partitions allow only in-place shrink and extend; Merge and Initialize are refused)." : "."));
                 if (!string.IsNullOrEmpty(request.Disk.VirtualImagePath)) return Reject("IMAGE_MISMATCH", "The request names a virtual disk image for a physical disk.");
-                steps.Add("Enrolled physical test disk: in-place resize gate passed");
+                steps.Add("Enrolled physical test disk gate passed");
             }
             else
             {

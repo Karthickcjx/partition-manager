@@ -26,19 +26,42 @@ public sealed record HelperPolicy(WriteMode Mode, IReadOnlyList<string> AllowedI
             a.Disk == DiskIdentity.From(disk)) == 1;
 
     /// <summary>
-    /// TEST MACHINES ONLY. MSFT_Disk.UniqueId values of physical disks an administrator explicitly enrolled for in-place
-    /// shrink/extend (Windows' own MSFT_Partition.Resize). Never written by the installer; absent on every normal PC.
-    /// Every other operation on a physical disk stays refused.
+    /// TEST MACHINES ONLY. MSFT_Disk.UniqueId values of physical disks an administrator explicitly enrolled for real
+    /// operations. Never written by the installer; absent on every normal PC. On an enrolled disk the running system,
+    /// EFI, MSR and recovery partitions still allow only in-place shrink/extend (see <see cref="AllowsPhysicalTest"/>);
+    /// Initialize and Merge stay refused.
     /// </summary>
     public IReadOnlyList<string> PhysicalTestDiskIds { get; init; } = [];
 
-    public static readonly WriteOperationKind[] PhysicalTestKinds = [WriteOperationKind.ShrinkPartition, WriteOperationKind.ExtendPartition];
+    /// <summary>Operations allowed on any partition of an enrolled disk, including the running system volume.</summary>
+    public static readonly WriteOperationKind[] PhysicalSystemKinds = [WriteOperationKind.ShrinkPartition, WriteOperationKind.ExtendPartition];
 
-    /// <summary>True only for an enrolled physical disk and an in-place shrink/extend.</summary>
-    public bool AllowsPhysicalResize(DiskInfo disk, WriteOperationKind kind) =>
+    /// <summary>Operations allowed on non-system partitions / free space of an enrolled disk.</summary>
+    public static readonly WriteOperationKind[] PhysicalTestKinds =
+    [
+        WriteOperationKind.ShrinkPartition, WriteOperationKind.ExtendPartition, WriteOperationKind.CreatePartition, WriteOperationKind.FormatVolume,
+        WriteOperationKind.DeletePartition, WriteOperationKind.SetVolumeLabel, WriteOperationKind.AssignDriveLetter, WriteOperationKind.RemoveDriveLetter,
+        WriteOperationKind.ChangeDriveLetter, WriteOperationKind.SplitPartition, WriteOperationKind.MovePartition,
+    ];
+
+    public bool IsEnrolledPhysicalTestDisk(DiskInfo disk) =>
         Mode == WriteMode.VirtualDisksOnly && !disk.IsVirtual && !string.IsNullOrWhiteSpace(disk.UniqueId) &&
-        PhysicalTestKinds.Contains(kind) &&
         PhysicalTestDiskIds.Any(id => string.Equals(id.Trim(), disk.UniqueId.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// True for an enrolled physical disk when the operation is allowed for its target: system/boot/EFI/MSR/recovery
+    /// partitions only in-place shrink/extend; other partitions and free space the full real set (minus Initialize/Merge).
+    /// </summary>
+    public bool AllowsPhysicalTest(DiskInfo disk, WriteOperationKind kind, PartitionInfo? target)
+    {
+        if (!IsEnrolledPhysicalTestDisk(disk) || !PhysicalTestKinds.Contains(kind)) return false;
+        var critical = target is not null && (target.IsBoot || target.IsSystem || target.IsProtectedRole || target.IsExtendedContainer);
+        return !critical || PhysicalSystemKinds.Contains(kind);
+    }
+
+    /// <summary>Back-compat name used by older call sites/tests: shrink/extend on an enrolled disk.</summary>
+    public bool AllowsPhysicalResize(DiskInfo disk, WriteOperationKind kind) =>
+        PhysicalSystemKinds.Contains(kind) && AllowsPhysicalTest(disk, kind, null);
 
     public static HelperPolicy Disabled { get; } = new(WriteMode.Disabled, []);
 
@@ -99,10 +122,11 @@ public static class RealExecutionEligibility
                 return new(false, $"\"{item.Description}\" will be simulated: {refusal}");
             if (request.Kind == WriteOperationKind.InitializeDisk && !policy.ApprovesInitialization(disk, DateTimeOffset.UtcNow))
                 return new(false, "Initialization is blocked without a fresh administrator approval for this newly created blank VHDX.");
-            if (!disk.IsVirtual && policy.AllowsPhysicalResize(disk, request.Kind)) { /* enrolled test disk, in-place resize only */ }
+            var targetPartition = request.Partition is null ? null : disk.FindPartition(request.Partition.PartitionNumber);
+            if (!disk.IsVirtual && policy.AllowsPhysicalTest(disk, request.Kind, targetPartition)) { /* enrolled test disk */ }
             else if (!disk.IsVirtual || !policy.AllowsImage(disk.VirtualImagePath))
                 return new(false, $"{disk.Title} is not a virtual disk inside an approved test folder. Physical disks are never written in this version" +
-                                  (policy.PhysicalTestDiskIds.Count > 0 && !disk.IsVirtual ? " (an enrolled test disk allows only in-place shrink and extend)." : "."));
+                                  (policy.IsEnrolledPhysicalTestDisk(disk) ? " (on an enrolled test disk the system, EFI, MSR and recovery partitions allow only in-place shrink and extend; Merge and Initialize stay simulated)." : "."));
             if (!WriteRequestValidator.Validate(request).IsValid) return new(false, $"\"{item.Description}\" cannot be sent to the helper.");
             try { state = item.Operation.Apply(state); }
             catch (OperationValidationException ex) { return new(false, ex.Message); }

@@ -92,7 +92,7 @@ public sealed class WmiStorageWriteBackend : IStorageWriteBackend
         using (Invoke(partition, "Online")) { }
     }
 
-    public RelocationResult RelocatePartition(int diskNumber, PartitionManager.Core.Execution.PartitionTarget source, long newOffsetBytes, Action<long, long>? checkpoint)
+    public RelocationResult RelocatePartition(int diskNumber, PartitionManager.Core.Execution.PartitionTarget source, long newOffsetBytes, Action<long, long>? checkpoint, bool physicalTestDisk = false)
     {
         string volumePath;
         using (var partition = GetPartition(diskNumber, source.PartitionNumber))
@@ -108,13 +108,13 @@ public sealed class WmiStorageWriteBackend : IStorageWriteBackend
         var src = source;
         using var disk = new Win32RawDisk(diskNumber);
         // Bind the opened device handle itself to the validated target (disk numbers can be reassigned between checks).
-        var identity = disk.VerifyTarget(src.PartitionNumber, src.OffsetBytes, src.SizeBytes, src.UniqueGuid, newOffsetBytes);
+        var identity = disk.VerifyTarget(src.PartitionNumber, src.OffsetBytes, src.SizeBytes, src.UniqueGuid, newOffsetBytes, expectVirtual: !physicalTestDisk);
         var plan = RelocationPlan.Create(src.OffsetBytes, newOffsetBytes, src.SizeBytes, disk.SectorSize);
         var progress = new RelocationProgress { Overlapping = plan.Overlaps };
         using var volumeLock = Win32VolumeLock.Acquire(volumePath, TimeSpan.FromSeconds(10));
         try
         {
-            disk.VerifyTarget(src.PartitionNumber, src.OffsetBytes, src.SizeBytes, src.UniqueGuid, newOffsetBytes, identity);
+            disk.VerifyTarget(src.PartitionNumber, src.OffsetBytes, src.SizeBytes, src.UniqueGuid, newOffsetBytes, identity, expectVirtual: !physicalTestDisk);
             if (BootSectorRelocation.IsBitLocker(disk, src.OffsetBytes))
                 throw new IOException("The partition is BitLocker-encrypted; moving BitLocker volumes is not supported yet. Nothing was changed.");
             byte[]? originalType = null;

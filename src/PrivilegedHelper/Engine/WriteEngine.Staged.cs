@@ -147,7 +147,7 @@ public sealed partial class WriteEngine
         var stepName = overlapping ? "Lock volume; overlapping block copy with per-chunk verification" : "Lock volume; block copy with per-chunk verification";
         try
         {
-            result = backend.RelocatePartition(n, PartitionTarget.From(src), dest, null);
+            result = backend.RelocatePartition(n, PartitionTarget.From(src), dest, null, physicalTestDisk: !before.IsVirtual);
             steps.Add(stepName);
         }
         catch (Exception ex) when (ex is not (OutOfMemoryException or StackOverflowException))

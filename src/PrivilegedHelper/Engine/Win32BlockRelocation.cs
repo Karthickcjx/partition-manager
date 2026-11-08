@@ -119,13 +119,14 @@ internal sealed class Win32RawDisk : IRawDisk
     /// validated partition and a free destination. Returns the disk's partition-table identity (GPT DiskId / MBR
     /// signature); pass it back as <paramref name="expectedIdentity"/> on later checks to detect a swapped disk.
     /// </summary>
-    public string VerifyTarget(int partitionNumber, long offset, long size, Guid? partitionGuid, long destination, string? expectedIdentity = null)
+    public string VerifyTarget(int partitionNumber, long offset, long size, Guid? partitionGuid, long destination, string? expectedIdentity = null, bool expectVirtual = true)
     {
         var query = new byte[12]; // STORAGE_PROPERTY_QUERY { StorageDeviceProperty, PropertyStandardQuery }
         var descriptor = Native.Ioctl(_handle, Native.IOCTL_STORAGE_QUERY_PROPERTY, query, 1024);
         var busType = BinaryPrimitives.ReadInt32LittleEndian(descriptor.AsSpan(28));
-        if (busType != Native.BusTypeFileBackedVirtual)
-            throw new IOException($"Disk {DiskNumber} is not a file-backed virtual disk (bus type {busType}). Nothing was changed.");
+        // The engine decided virtual vs enrolled physical test disk; the opened handle must agree.
+        if ((busType == Native.BusTypeFileBackedVirtual) != expectVirtual)
+            throw new IOException($"Disk {DiskNumber} is not the expected kind of disk (bus type {busType}). Nothing was changed.");
         var layout = GetLayout();
         var identity = DiskIdentityOf(layout);
         if (expectedIdentity is not null && identity != expectedIdentity)

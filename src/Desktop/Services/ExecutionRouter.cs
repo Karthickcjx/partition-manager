@@ -27,7 +27,7 @@ public sealed class ExecutionRouter(IOperationExecutor simulator, Func<IOperatio
     public bool RealWritesEnabled => policy.Load().Mode == WriteMode.VirtualDisksOnly && File.Exists(helperPath);
 
     public string ModeDescription => RealWritesEnabled
-        ? "Real writes are enabled for approved virtual disks only (Merge and every physical disk stay simulated)."
+        ? "Real writes are enabled for approved virtual disks and administrator-enrolled test disks only; Merge and all other physical disks stay simulated."
         : "Simulation mode: tasks are rehearsed, never written to disk.";
 
     public ExecutionRoute Route(IReadOnlyList<QueuedOperation> items, PreviewState baseline)

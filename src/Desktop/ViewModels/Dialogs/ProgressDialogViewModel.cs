@@ -30,7 +30,7 @@ public sealed class ProgressDialogViewModel : DialogViewModel
         CancelCommand = new RelayCommand(() => { _cancelling = true; _cts.Cancel(); Raise(nameof(IsCancelling)); }, () => !_cancelling);
     }
 
-    public override string Title => _executor.IsSimulation ? "Executing (simulation)" : "Real operation on virtual disk";
+    public override string Title => _executor.IsSimulation ? "Executing (simulation)" : "Real disk operation";
     public override bool ShowFooter => false;
     public bool IsSimulation => _executor.IsSimulation;
     public string CancelText => _executor.IsSimulation ? "Cancel" : "Cancel remaining tasks";
