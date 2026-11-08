@@ -1,6 +1,6 @@
 ; Inno Setup 6 script. Build with scripts\build-release.ps1 (publishes first, then compiles this).
 #define AppName "Partition Manager"
-#define AppVersion "0.5.1-preview"
+#define AppVersion "0.6.0-preview"
 #define AppExe "PartitionManager.exe"
 
 [Setup]
@@ -23,8 +23,8 @@ ArchitecturesInstallIn64BitMode=x64compatible
 ; Per-machine install into Program Files is required: the elevated helper must live in a folder that standard
 ; users cannot modify (the helper refuses to run otherwise). The app itself runs unelevated.
 PrivilegesRequired=admin
-VersionInfoVersion=0.5.1
-VersionInfoProductTextVersion=0.5.1-preview
+VersionInfoVersion=0.6.0
+VersionInfoProductTextVersion=0.6.0-preview
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -47,6 +47,11 @@ Source: "..\docs\reports\InstallerValidation-0.4.md"; DestDir: "{app}\docs\repor
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
+
+[Registry]
+; 0.6 public default: real operations on all disks (the helper still restricts the running Windows, EFI, MSR and
+; recovery partitions to in-place shrink/extend). HKLM is writable only by administrators. Removed on uninstall.
+Root: HKLM; Subkey: "SOFTWARE\PartitionManager\Helper"; ValueType: string; ValueName: "WriteMode"; ValueData: "AllDisks"; Flags: uninsdeletevalue
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent runasoriginaluser

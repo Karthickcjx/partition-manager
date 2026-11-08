@@ -341,20 +341,16 @@ public sealed class PartitionManagerViewModel : ObservableObject
         var route = _router.Route(items, _queue.Baseline);
         foreach (var number in items.Select(i => i.Operation.DiskNumber).Distinct())
             details.AddRange(PartitionManager.Core.Layout.LayoutPreviewRows.Describe(_queue.Baseline.Disk(number), _queue.Preview.Disk(number)));
-        var executor = route.Executor;
-        string message;
-        if (executor.IsSimulation)
+        if (route.Executor is not { } executor)
         {
-            message = "Simulation: the tasks below will be rehearsed step by step. No data will be written to any disk.\n" + route.Reason;
+            // Nothing is ever simulated: a queue that cannot run as real operations does not run.
+            _dialogs.Message("These tasks cannot run", route.Reason + "\n\nNothing was changed. Remove or split the task, then try again.", MessageKind.Warning);
+            return;
         }
-        else
-        {
-            message = "These changes will be WRITTEN to the virtual disk(s) below. The helper re-checks every task before writing.\n" +
-                      "Back up anything important on the target first. Cancel stops before the next task; a task in progress always finishes.";
-            details.Add(@"Each task is verified and durably journaled (%ProgramData%\PartitionManager\Audit). Interrupted or failed operations require manual recovery review before further writes.");
-        }
-        if (!_dialogs.Confirm($"Execute {items.Count} task(s)", message, details, executor.IsSimulation ? "Run simulation" : "Write changes",
-                danger: !executor.IsSimulation))
+        var message = "These changes will be WRITTEN to the disk(s) below. The helper re-checks every task before writing.\n" +
+                      "Back up anything important first. Cancel stops before the next task; a task in progress always finishes.";
+        details.Add(@"Each task is verified and durably journaled (%ProgramData%\PartitionManager\Audit). Interrupted or failed operations require manual recovery review before further writes.");
+        if (!_dialogs.Confirm($"Execute {items.Count} task(s)", message, details, "Write changes", danger: true))
             return;
 
         var progress = new ProgressDialogViewModel(executor, items, _queue.Baseline);
@@ -364,16 +360,16 @@ public sealed class PartitionManagerViewModel : ObservableObject
 
         var fresh = NewQueue(report.Result);
         _queue = fresh;
-        IsSimulatedLayout = executor.IsSimulation && report.CompletedOperations > 0;
+        IsSimulatedLayout = false;
         Rebuild();
         CommandManager.InvalidateRequerySuggested();
 
         var elapsed = $"{(int)report.Elapsed.TotalHours}h{report.Elapsed.Minutes}m{report.Elapsed.Seconds}s";
-        var suffix = executor.IsSimulation ? "\n\nThis was a simulation. The disk map now shows the simulated result; press Refresh to reload the real layout." : "";
+        const string suffix = "";
         switch (report.Outcome)
         {
             case ExecutionOutcome.Succeeded:
-                _dialogs.Message(executor.IsSimulation ? "Done" : "Completed and verified", $"{report.CompletedOperations} task(s) completed in {elapsed}.{suffix}", MessageKind.Success);
+                _dialogs.Message("Completed and verified", $"{report.CompletedOperations} task(s) completed in {elapsed}.{suffix}", MessageKind.Success);
                 break;
             case ExecutionOutcome.Cancelled:
                 _dialogs.Message("Cancelled", $"Stopped after {report.CompletedOperations} of {items.Count} task(s). Remaining tasks were discarded.{suffix}", MessageKind.Warning);
@@ -382,10 +378,10 @@ public sealed class PartitionManagerViewModel : ObservableObject
                 _dialogs.Message("Nothing was changed", $"{report.Error}{suffix}", MessageKind.Error);
                 break;
             default:
-                _dialogs.Message(executor.IsSimulation ? "The task failed" : "Stopped: changes may be partially completed", $"{report.Error}\n\n{report.CompletedOperations} of {items.Count} task(s) completed before the failure. Refresh and inspect the actual layout before retrying.{suffix}", MessageKind.Error);
+                _dialogs.Message("Stopped: changes may be partially completed", $"{report.Error}\n\n{report.CompletedOperations} of {items.Count} task(s) completed before the failure. Refresh and inspect the actual layout before retrying.{suffix}", MessageKind.Error);
                 break;
         }
         // After real writes, show what is actually on disk rather than the predicted layout.
-        if (!executor.IsSimulation) _ = RefreshAsync();
+        _ = RefreshAsync();
     }
 }

@@ -91,7 +91,7 @@ public class PhysicalTestDiskTests
     }
 
     [Fact]
-    public void Enrolment_is_by_exact_disk_id_needs_the_virtual_disks_mode_and_never_allows_initialize_or_merge()
+    public void Enrolment_is_by_exact_disk_id_never_allows_merge_and_initializes_only_blank_disks()
     {
         var d = EnrolledDisk();
         var data = d.FindPartition(3);
@@ -100,8 +100,12 @@ public class PhysicalTestDiskTests
         Assert.False((VirtualOnly with { PhysicalTestDiskIds = [Id] }).AllowsPhysicalTest(d with { UniqueId = "" }, WriteOperationKind.DeletePartition, data));
         var enrolled = VirtualOnly with { PhysicalTestDiskIds = [" phys-test-1 "] };
         Assert.True(enrolled.AllowsPhysicalTest(d, WriteOperationKind.DeletePartition, data));
-        Assert.False(enrolled.AllowsPhysicalTest(d, WriteOperationKind.InitializeDisk, null));
         Assert.False(enrolled.AllowsPhysicalTest(d, WriteOperationKind.MergePartitions, data));
+        // Initialize needs a blank, non-system disk, and only the public AllDisks mode approves physical ones.
+        var blank = d.WithPartitions([]) with { Style = PartitionStyle.Raw, IsBoot = false, IsSystem = false };
+        Assert.False(enrolled.ApprovesInitialization(blank, DateTimeOffset.UtcNow));
+        Assert.True((enrolled with { Mode = WriteMode.AllDisks }).ApprovesInitialization(blank, DateTimeOffset.UtcNow));
+        Assert.False((enrolled with { Mode = WriteMode.AllDisks }).ApprovesInitialization(d, DateTimeOffset.UtcNow));
     }
 
     [Fact]
@@ -116,5 +120,24 @@ public class PhysicalTestDiskTests
         var q2 = new OperationQueue(s, new PartitionManager.Core.Safety.SafetyPolicy());
         Assert.True(q2.TryAdd(new DeletePartitionOperation(3, 3)).Success);
         Assert.True(RealExecutionEligibility.Evaluate(q2.Items, s, policy, true).IsEligible, "data partition delete is real on an enrolled disk");
+    }
+}
+
+/// <summary>0.6 public mode: every disk is writable, but the running system partitions keep the same limits.</summary>
+public class AllDisksPolicyTests
+{
+    [Fact]
+    public void All_disks_mode_writes_any_disk_but_still_protects_the_running_system()
+    {
+        var policy = new HelperPolicy(WriteMode.AllDisks, []);
+        var d = PhysicalDisk();
+        var sys = d.WithPartitions(d.Partitions.Select(p => p with { IsBoot = true }));
+        Assert.True(policy.AllowsPhysicalTest(d, WriteOperationKind.DeletePartition, d.Partitions[0]));
+        Assert.False(policy.AllowsPhysicalTest(sys, WriteOperationKind.DeletePartition, sys.Partitions[0]));
+        Assert.True(policy.AllowsPhysicalTest(sys, WriteOperationKind.ShrinkPartition, sys.Partitions[0]));
+        Assert.False(policy.AllowsPhysicalTest(d, WriteOperationKind.MergePartitions, d.Partitions[0]));
+        Assert.True(policy.AllowsImage(@"C:\Users\me\disk.vhdx"));
+        Assert.False(policy.AllowsImage(@"\server\share\disk.vhdx"));
+        Assert.False(HelperPolicy.Disabled.AllowsImage(@"C:\Users\me\disk.vhdx"));
     }
 }

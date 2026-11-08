@@ -158,47 +158,6 @@ public class ExecutorTests
         return q;
     }
 
-    [Fact]
-    public async Task Simulation_reaches_preview_state()
-    {
-        var q = Queued();
-        var log = new MemoryOperationLog();
-        var reports = new List<ExecutionProgress>();
-        var exec = new SimulatedExecutor(log, TimeSpan.FromMilliseconds(1));
-        var r = await exec.ExecuteAsync(q.Items, q.Baseline, new SyncProgress<ExecutionProgress>(reports.Add), CancellationToken.None);
-        Assert.Equal(ExecutionOutcome.Succeeded, r.Outcome);
-        Assert.Equal(2, r.CompletedOperations);
-        Assert.Equal(40 * GiB, r.Result.Disk(1).FindPartition(1)!.SizeBytes);
-        Assert.Equal(100, reports[^1].Percent);
-        Assert.True(reports.Select(p => p.Percent).SequenceEqual(reports.Select(p => p.Percent).Order()));
-        Assert.All(log.Entries, e => Assert.Contains("[simulation]", e.Message));
-    }
-
-    [Fact]
-    public async Task Cancellation_stops_between_steps_and_keeps_completed_work()
-    {
-        var q = Queued();
-        using var cts = new CancellationTokenSource();
-        var exec = new SimulatedExecutor(NullOperationLog.Instance, TimeSpan.FromMilliseconds(20));
-        var progress = new SyncProgress<ExecutionProgress>(p => { if (p.OperationIndex == 1) cts.Cancel(); });
-        var r = await exec.ExecuteAsync(q.Items, q.Baseline, progress, cts.Token);
-        Assert.Equal(ExecutionOutcome.Cancelled, r.Outcome);
-        Assert.Equal(1, r.CompletedOperations);
-        Assert.Null(r.Result.Disk(1).FindPartition(2));
-        Assert.Equal(10 * GiB, r.Result.Disk(1).FindPartition(1)!.SizeBytes);
-    }
-
-    [Fact]
-    public async Task Failure_is_reported_with_partial_state()
-    {
-        var q = Queued();
-        var exec = new SimulatedExecutor(NullOperationLog.Instance, TimeSpan.Zero) { FailAtOperation = 1 };
-        var r = await exec.ExecuteAsync(q.Items, q.Baseline, null, CancellationToken.None);
-        Assert.Equal(ExecutionOutcome.Failed, r.Outcome);
-        Assert.Equal(1, r.CompletedOperations);
-        Assert.NotNull(r.Error);
-    }
-
     private sealed class SyncProgress<T>(Action<T> action) : IProgress<T>
     {
         public void Report(T value) => action(value);

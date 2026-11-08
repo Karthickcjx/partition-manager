@@ -8,9 +8,9 @@
     <PlatformTarget>x64</PlatformTarget>
     <!-- Keep one output folder whether built via the solution (Platform=x64) or a project file. -->
     <AppendPlatformToOutputPath>false</AppendPlatformToOutputPath>
-    <Version>0.5.1-preview</Version>
+    <Version>0.6.0-preview</Version>
     <VersionSuffix>preview</VersionSuffix>
-    <InformationalVersion>0.5.1-preview</InformationalVersion>
+    <InformationalVersion>0.6.0-preview</InformationalVersion>
     <Company>Partition Manager (clean-room)</Company>
     <Product>Partition Manager</Product>
   </PropertyGroup>

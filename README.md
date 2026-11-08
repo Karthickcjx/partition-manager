@@ -1,14 +1,32 @@
 # Partition Manager
 
-Development planning: [v0.5.0 hardening and E:-only testing policy](docs/V0.5.0_DEVELOPMENT_PLAN.md).
-Physical testing is blocked pending backup/restore verification, VHDX validation,
-independent review and explicit consent for one exact operation.
-
 A Windows disk, partition and **data recovery** tool written from scratch in C#/WPF (.NET 8). Its layout and
 workflows follow a commercial partition tool (analysed in [docs/ANALYSIS.md](docs/ANALYSIS.md)), but it contains no
 code, assets or branding from it.
 
-**Status: 0.5.1-preview engineering build. Release gates remain open; not production-ready.** Current gate: [ReleaseGate-0.5.1](docs/reports/ReleaseGate-0.5.1.md) (installed-VM security results in [SecurityHardening-0.5.1](docs/reports/SecurityHardening-0.5.1.md)). See [Milestone 4](docs/reports/Milestone4.md) and [E: readiness](docs/reports/E_PHYSICAL_TEST_READINESS.md). Physical writes remain disabled. [All 7 elevated VHDX tests now pass](docs/reports/ProductionHardening-20261107.md), including GPT/MBR journal integration and 1003 verified file hashes.
+> [!CAUTION]
+> **0.6.0-preview makes REAL changes to your disks. There is no simulation mode.**
+>
+> When you confirm a task, it is written to the actual disk — including disks that hold your files and the disk Windows
+> runs from. A mistake, a bug, a power cut or a failing drive during an operation can **destroy partitions and data**
+> or leave Windows unable to start.
+>
+> * **Back up everything you care about before using it**, and keep Windows recovery media at hand.
+> * This is an **unsigned preview** that has **not had an independent security review**. Windows SmartScreen will warn you.
+> * Known security issue (unfixed): the elevated helper honours .NET profiler environment variables, so other software
+>   already running as your user can load code into it when you approve the administrator prompt
+>   ([details](docs/reports/SecurityHardening-0.5.1.md), F4).
+> * Tested on Windows Server 2025 (EC2) and on virtual disks. **Not yet tested on Windows 10/11 physical PCs.**
+> * Use it at your own risk. There is no warranty.
+
+**Built-in limits that stay on** (these are not simulation; they stop the app from making the PC unbootable):
+the partition Windows is running from, and the EFI, MSR and recovery partitions, can only be **shrunk or extended in
+place** — never deleted, formatted, moved or relabelled. **Merge** is not available yet. **Initialize** works only on a
+blank disk. BitLocker-encrypted volumes are refused for Move.
+
+**Status: 0.6.0-preview.** Release gate: [ReleaseGate-0.5.1](docs/reports/ReleaseGate-0.5.1.md) ·
+security: [SecurityHardening-0.5.1](docs/reports/SecurityHardening-0.5.1.md) · Move validation:
+[MoveValidation-0.5.1](docs/reports/MoveValidation-0.5.1.md).
 
 ![Partition Management](docs/screenshots/05-pending-tasks.png)
 
@@ -16,14 +34,18 @@ code, assets or branding from it.
 
 | Feature | Status | Evidence |
 |---|---|---|
-| Disk and partition discovery, disk map, partition table, properties | Works (read-only) | Live WMI test, UI smoke test |
-| **Recover deleted files (NTFS)** | **Works on real volumes** | E: run: 4 deleted files (300 B to 24 MiB, including a deleted subfolder) recovered with matching SHA-256 |
-| **Find lost partitions** (NTFS, FAT32, exFAT) | **Works (read-only scan)** | A deleted partition on a VHDX was found at its exact original offset and size |
-| Change label; assign, change and remove drive letter; **create, format, delete, shrink, extend, split** | **Tested on virtual disks only** (real Windows storage calls through the elevated helper) | GPT and MBR VHDX runs with independent `Get-Partition`/`Get-Volume` checks and SHA-256 file checks ([report](docs/reports/runs/StructuralRun-20261107-141235.md)) |
-| Any write to a **physical** disk (including E:) | **Disabled.** Simulated only; the helper refuses physical disks | See [E:-only authorization design](docs/E_ONLY_AUTHORIZATION_DESIGN.md) (design only) |
-| Initialize GPT/MBR | Implemented; fresh blank-image approval required | Helper engine and virtual-disk integration |
-| Move, merge, delete-all, hide/show | Simulated; real Move/Merge blocked | [Technical blockers](docs/MOVE_MERGE_LIMITATIONS.md) |
-| Clone, backup, OS migration, MBR/GPT conversion | Not implemented (placeholder pages) | – |
+| Disk and partition discovery, disk map, partition table, properties | Works (real disks) | Live WMI, UI smoke test |
+| **Recover deleted files (NTFS)** | **Works on real volumes**, through the elevated helper (read-only); the app itself never runs as administrator | Real-volume recovery with matching SHA-256; chunked helper reads byte-identical to direct recovery |
+| **Find lost partitions** (NTFS, FAT32, exFAT) | **Works (read-only scan)** | Deleted partition on a VHDX found at its exact offset and size |
+| Change label; assign, change and remove drive letter; **create, format, delete, shrink, extend, split** | **Real, on all disks** (Windows storage API through the elevated helper) | GPT and MBR VHDX runs with independent `Get-Partition`/`Get-Volume` and SHA-256 checks; C: shrink on Windows Server 2025 |
+| **Move** (same size) | **Real, block-level**: every sector copied and verified by SHA-256; partition table updated by Windows | 8 VM scenarios: GPT/MBR, NTFS/FAT32/exFAT, overlapping left/right, 1 MiB shift, volume-in-use refusal ([report](docs/reports/MoveValidation-0.5.1.md)) |
+| Initialize GPT/MBR | Real, blank disks only | Helper engine and virtual-disk integration |
+| Merge; Move combined with resize in one task | **Not available** (refused with a reason) | [Merge limitations](docs/MOVE_MERGE_LIMITATIONS.md) |
+| Clone, backup, OS migration, MBR/GPT conversion, toolkit | Not implemented (placeholder pages) | – |
+
+Run one structural change (create/delete/resize/move/split) per disk at a time, then refresh before queueing the next:
+Windows assigns new partition numbers that cannot be predicted, so the app refuses a second structural task on the
+same disk in one run.
 
 **Measured speed** (Release build, i5-11260H, NVMe). Scanning a 270 GB volume for deleted files read 321,280 MFT
 records in 0.98 s. Recovering a 24 MiB file took 45 ms. Searching a 512 MB disk for lost partitions took 22 ms.
@@ -157,7 +179,7 @@ scripts\configure-test-environment.ps1 -Disable                             # tu
 ## Project layout
 ```
 src/
-  Core/             Pure logic: models, GPT/MBR parsers, layout, operations, safety policy, simulator,
+  Core/             Pure logic: models, GPT/MBR parsers, layout, operations (preview model), safety policy,
                     Execution/ (disk identity, write requests, IPC protocol), Recovery/ (NTFS scanner, file recoverer,
                     lost-partition scanner)
   Infrastructure/   WMI discovery, raw disk and volume readers, BitLocker probe, logging, helper client
@@ -171,7 +193,9 @@ docs/               ANALYSIS, FEATURES, PRODUCTION_AUDIT, reports/, screenshots/
 
 ## Known limitations
 * Binaries aren't code-signed, so UAC shows "Unknown publisher".
-* Real label/letter, create, format, delete, shrink, extend, split and initialization are restricted to approved virtual disks. Move/Merge remain simulated. Initialization additionally needs a fresh administrator-issued blank-image approval; there is no UI provisioning flow yet.
+* Operations are real on every disk. The running Windows, EFI, MSR and recovery partitions allow only in-place shrink/extend; Merge and combined move+resize are refused; one structural change per disk per run.
+* An interrupted **overlapping** Move cannot be resumed automatically yet: the partition is marked "move in progress" so Windows will not mount a half-moved volume, and recovery is from your backup.
+* No live progress bar during a long Move; the dialog shows elapsed time.
 * Data recovery covers NTFS only; see the recovery limits above. The scan from inside the elevated app UI was
   checked visually but isn't covered by an automated elevated UI test.
 * English only. No screen-reader or 150%/200% DPI audit yet. Memory use is about 290 MB.

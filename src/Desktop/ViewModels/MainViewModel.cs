@@ -76,8 +76,8 @@ public sealed class MainViewModel : ObservableObject
             $"Partition Manager {typeof(MainViewModel).Assembly.GetName().Version?.ToString(3)} (clean-room implementation, preview).\n\n" +
             "Disk information comes from the Windows Storage Management API. Partition operations are queued and previewed first. " +
             (_router.RealWritesEnabled
-                ? "Real writes are enabled only for virtual disks (VHD/VHDX) in the administrator-approved test folder; Merge and all physical disks are simulated.\n\n"
-                : "Real writes are disabled on this PC, so every operation is rehearsed by the simulation executor and nothing is written to a disk.\n\n") +
+                ? "Changes are written to the real disks after you confirm. The running Windows, EFI, MSR and recovery partitions can only be shrunk or extended in place; Merge is not available yet.\n\n"
+                : "Disk writes are disabled on this PC (helper policy missing); reinstall to restore the default.\n\n") +
             $"Logs: {LogDirectory}"));
     }
 
@@ -91,7 +91,7 @@ public sealed class MainViewModel : ObservableObject
     public string PrivilegeText => IsElevated ? "Administrator" : "Standard user";
     private readonly IExecutionRouter _router;
     // Previously always "Simulation mode", even when real virtual-disk writes were enabled (found in RDP testing).
-    public string ModeText => IsDemo ? "Demo data" : _router.RealWritesEnabled ? "Real writes: virtual disks" : "Simulation mode";
+    public string ModeText => _router.RealWritesEnabled ? "Real disk operations" : "Writes disabled";
     public string ThemeGlyph => ThemeManager.Current == AppTheme.Dark ? "" : "";
 
     public ICommand ToggleThemeCommand { get; }

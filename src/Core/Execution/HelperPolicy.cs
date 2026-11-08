@@ -7,7 +7,17 @@ namespace PartitionManager.Core.Execution;
 /// What the privileged helper is allowed to write. There is deliberately no mode for physical disks: that requires a
 /// separately authorized validation process and a code change, not a configuration switch.
 /// </summary>
-public enum WriteMode { Disabled, VirtualDisksOnly }
+public enum WriteMode
+{
+    Disabled,
+    /// <summary>Approved VHD/VHDX folders, plus administrator-enrolled test disks (PhysicalTestDiskIds).</summary>
+    VirtualDisksOnly,
+    /// <summary>
+    /// Public 0.6 default (written by the installer): every disk. The running Windows, EFI, MSR and recovery partitions
+    /// still allow only in-place shrink/extend; Merge is unavailable; Initialize only for blank disks.
+    /// </summary>
+    AllDisks,
+}
 
 /// <summary>
 /// Write policy. Read by the helper from HKLM (administrator-writable only); the UI reads the same values to decide
@@ -20,6 +30,7 @@ public sealed record HelperPolicy(WriteMode Mode, IReadOnlyList<string> AllowedI
     public IReadOnlyList<BlankImageApproval> InitializationApprovals { get; init; } = [];
 
     public bool ApprovesInitialization(DiskInfo disk, DateTimeOffset now) =>
+        (Mode == WriteMode.AllDisks && disk.Style == PartitionStyle.Raw && disk.Partitions.Count == 0 && !disk.HostsRunningSystem) ||
         disk.IsVirtual && disk.Style == PartitionStyle.Raw && disk.Partitions.Count == 0 &&
         AllowsImage(disk.VirtualImagePath) && InitializationApprovals.Count(a =>
             a.CreatedUtc <= now && now - a.CreatedUtc <= TimeSpan.FromMinutes(10) &&
@@ -42,9 +53,11 @@ public sealed record HelperPolicy(WriteMode Mode, IReadOnlyList<string> AllowedI
         WriteOperationKind.ShrinkPartition, WriteOperationKind.ExtendPartition, WriteOperationKind.CreatePartition, WriteOperationKind.FormatVolume,
         WriteOperationKind.DeletePartition, WriteOperationKind.SetVolumeLabel, WriteOperationKind.AssignDriveLetter, WriteOperationKind.RemoveDriveLetter,
         WriteOperationKind.ChangeDriveLetter, WriteOperationKind.SplitPartition, WriteOperationKind.MovePartition,
+        WriteOperationKind.InitializeDisk, // still requires a blank, non-system disk (ApprovesInitialization)
     ];
 
     public bool IsEnrolledPhysicalTestDisk(DiskInfo disk) =>
+        (Mode == WriteMode.AllDisks && !disk.IsVirtual) ||
         Mode == WriteMode.VirtualDisksOnly && !disk.IsVirtual && !string.IsNullOrWhiteSpace(disk.UniqueId) &&
         PhysicalTestDiskIds.Any(id => string.Equals(id.Trim(), disk.UniqueId.Trim(), StringComparison.OrdinalIgnoreCase));
 
@@ -70,9 +83,10 @@ public sealed record HelperPolicy(WriteMode Mode, IReadOnlyList<string> AllowedI
     /// <summary>True when <paramref name="imagePath"/> is a VHD/VHDX file inside one of the allowed local folders.</summary>
     public bool AllowsImage(string? imagePath)
     {
-        if (Mode != WriteMode.VirtualDisksOnly || string.IsNullOrWhiteSpace(imagePath)) return false;
+        if (Mode == WriteMode.Disabled || string.IsNullOrWhiteSpace(imagePath)) return false;
         if (!TryNormalizeLocal(imagePath, out var full)) return false;
         if (!(full.EndsWith(".vhdx", StringComparison.OrdinalIgnoreCase) || full.EndsWith(".vhd", StringComparison.OrdinalIgnoreCase))) return false;
+        if (Mode == WriteMode.AllDisks) return true;
         foreach (var root in AllowedImageRoots)
         {
             if (!TryNormalizeLocal(root, out var r)) continue;
@@ -103,7 +117,7 @@ public static class RealExecutionEligibility
     public static Eligibility Evaluate(IReadOnlyList<QueuedOperation> items, PreviewState baseline, HelperPolicy policy, bool helperInstalled)
     {
         if (items.Count == 0) return new(false, "There are no tasks.");
-        if (policy.Mode == WriteMode.Disabled) return new(false, "Real disk writes are disabled on this PC (helper policy: Disabled).");
+        if (policy.Mode == WriteMode.Disabled) return new(false, "Disk writes are disabled on this PC (helper policy missing or Disabled). Reinstall Partition Manager to restore the default policy.");
         if (!helperInstalled) return new(false, "The privileged helper is not installed.");
 
         var state = baseline;
@@ -111,27 +125,28 @@ public static class RealExecutionEligibility
         foreach (var item in items)
         {
             if (structurallyChanged.Contains(item.Operation.DiskNumber))
-                return new(false, $"\"{item.Description}\" follows a structural change on the same disk. Windows assigns new partition numbers and GUIDs that cannot be predicted, so run one structural change per disk, refresh, then continue.");
+                return new(false, $"\"{item.Description}\" follows a structural change on the same disk. Windows assigns new partition numbers that cannot be predicted, so run one structural change per disk, refresh, then add the next task.");
             var request = WriteRequestFactory.TryCreate(item.Operation, state);
-            if (request is null) return new(false, $"\"{item.Description}\" is not yet available as a real operation.");
+            if (request is null) return new(false, $"\"{item.Description}\" is not available as a single operation yet. Split it into separate tasks (for example move first, then resize), running each one and refreshing in between.");
             if (request.IsStructural) structurallyChanged.Add(item.Operation.DiskNumber);
             var disk = state.Disk(item.Operation.DiskNumber);
             if (request.Kind is WriteOperationKind.MergePartitions)
-                return new(false, "Unsupported real operation: Merge is simulation only pending consistent copying and durable recovery.");
+                return new(false, "Merge is not available yet: it cannot yet guarantee that every file and its metadata are preserved. Copy the files yourself, delete the partition, then extend the other one.");
             if (request.Kind == WriteOperationKind.MovePartition && MoveRefusal(disk, request) is { } refusal)
-                return new(false, $"\"{item.Description}\" will be simulated: {refusal}");
+                return new(false, $"\"{item.Description}\" cannot run: {refusal}");
             if (request.Kind == WriteOperationKind.InitializeDisk && !policy.ApprovesInitialization(disk, DateTimeOffset.UtcNow))
                 return new(false, "Initialization is blocked without a fresh administrator approval for this newly created blank VHDX.");
             var targetPartition = request.Partition is null ? null : disk.FindPartition(request.Partition.PartitionNumber);
             if (!disk.IsVirtual && policy.AllowsPhysicalTest(disk, request.Kind, targetPartition)) { /* enrolled test disk */ }
             else if (!disk.IsVirtual || !policy.AllowsImage(disk.VirtualImagePath))
-                return new(false, $"{disk.Title} is not a virtual disk inside an approved test folder. Physical disks are never written in this version" +
-                                  (policy.IsEnrolledPhysicalTestDisk(disk) ? " (on an enrolled test disk the system, EFI, MSR and recovery partitions allow only in-place shrink and extend; Merge and Initialize stay simulated)." : "."));
+                return new(false, policy.IsEnrolledPhysicalTestDisk(disk)
+                    ? $"\"{item.Description}\" is not allowed: the running Windows, EFI, MSR and recovery partitions can only be shrunk or extended in place."
+                    : $"{disk.Title} is not writable under the current policy ({policy.Mode}).");
             if (!WriteRequestValidator.Validate(request).IsValid) return new(false, $"\"{item.Description}\" cannot be sent to the helper.");
             try { state = item.Operation.Apply(state); }
             catch (OperationValidationException ex) { return new(false, ex.Message); }
         }
-        return new(true, "Real operation on approved virtual disks; each result will be independently re-enumerated and verified.");
+        return new(true, "Real operation; each result will be independently re-enumerated and verified.");
     }
 
     /// <summary>Mirrors the helper's Move preconditions so the reason is visible before Apply (the helper re-checks).</summary>

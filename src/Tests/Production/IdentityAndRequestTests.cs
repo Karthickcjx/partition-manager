@@ -222,12 +222,14 @@ public class EligibilityTests
     }
 
     [Fact]
-    public void Physical_disk_is_never_eligible()
+    public void Physical_disk_is_not_writable_under_the_virtual_disks_policy_but_is_under_all_disks()
     {
         var s = State(PhysicalDisk());
         var e = RealExecutionEligibility.Evaluate(Queue(s, new ChangeLabelOperation(1, 1, "A")), s, VirtualOnly, true);
         Assert.False(e.IsEligible);
-        Assert.Contains("Physical disks are never written", e.Reason);
+        Assert.Contains("not writable under the current policy", e.Reason);
+        var all = RealExecutionEligibility.Evaluate(Queue(s, new ChangeLabelOperation(1, 1, "A")), s, VirtualOnly with { Mode = WriteMode.AllDisks }, true);
+        Assert.True(all.IsEligible, all.Reason);
     }
 
     [Fact]
@@ -273,7 +275,7 @@ public class EligibilityTests
         var p = d.Partitions[0];
         var e = RealExecutionEligibility.Evaluate(Queue(s, new ResizeMovePartitionOperation(3, 2, p.OffsetBytes + MiB, p.SizeBytes)), s, VirtualOnly, true);
         Assert.False(e.IsEligible, e.Reason);
-        if (fs == "RAW") Assert.Contains("will be simulated", e.Reason);   // ReFS is refused earlier, by the request factory
+        if (fs == "RAW") Assert.Contains("cannot run", e.Reason);   // ReFS is refused earlier, by the request factory
     }
 
     [Fact]

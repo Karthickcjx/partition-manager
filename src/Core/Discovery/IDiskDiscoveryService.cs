@@ -11,12 +11,6 @@ public interface IDiskDiscoveryService
     Task<DiscoveryResult> DiscoverAsync(CancellationToken cancellationToken = default);
 }
 
-/// <summary>Fixed sample layout, used for UI design-time data and the --demo switch.</summary>
-public sealed class SampleDiskDiscoveryService : IDiskDiscoveryService
-{
-    public Task<DiscoveryResult> DiscoverAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult(new DiscoveryResult(new PreviewState(SampleDisks.Create()), ["Showing sample disks (demo mode)."], DateTimeOffset.Now));
-}
 
 public static class SampleDisks
 {

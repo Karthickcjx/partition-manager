@@ -24,26 +24,22 @@ public partial class App : Application
         DispatcherUnhandledException += OnUnhandled;
 
         var args = e.Args.Select(a => a.ToLowerInvariant()).ToHashSet();
-        var demo = args.Contains("--demo");
         var theme = args.Contains("--dark") ? AppTheme.Dark : args.Contains("--light") ? AppTheme.Light : ThemeManager.SystemTheme();
         ThemeManager.Apply(theme);
 
-        _log.Info("app", $"start; elevated={Elevation.IsElevated}; demo={demo}; args={string.Join(' ', e.Args)}");
+        _log.Info("app", $"start; elevated={Elevation.IsElevated}; args={string.Join(' ', e.Args)}");
 
-        IDiskDiscoveryService discovery = demo
-            ? new SampleDiskDiscoveryService()
-            : new WmiDiskDiscoveryService(_log, new WmiBitLockerProbe());
+        IDiskDiscoveryService discovery = new WmiDiskDiscoveryService(_log, new WmiBitLockerProbe());
         var log = _log;
         var helperPath = Path.Combine(AppContext.BaseDirectory, "PartitionManager.Helper.exe");
-        IHelperPolicySource policy = demo ? new FixedHelperPolicySource(HelperPolicy.Disabled) : new RegistryHelperPolicySource();
+        IHelperPolicySource policy = new RegistryHelperPolicySource();
         var router = new ExecutionRouter(
-            new SimulatedExecutor(log),
             () => new HelperExecutor(ct => HelperClient.LaunchAsync(helperPath, ct), log),
             policy,
             helperPath);
         log.Info("app", $"write mode {policy.Load().Mode}; helper {(File.Exists(helperPath) ? "present" : "absent")}");
 
-        var vm = new MainViewModel(discovery, router, new DialogService(), _log, _log.Directory, demo,
+        var vm = new MainViewModel(discovery, router, new DialogService(), _log, _log.Directory, demoMode: false,
             () => new HelperRecoveryClient(ct => HelperClient.LaunchAsync(helperPath, ct)));
         var window = new MainWindow { DataContext = vm };
         MainWindow = window;

@@ -47,7 +47,7 @@ try {
         Write-Warning 'Inno Setup 6 not found; skipping installer. Install it from https://jrsoftware.org/isinfo.php'
     }
 
-    $files = Get-Item artifacts\publish\PartitionManager.exe, artifacts\publish\PartitionManager.Helper.exe, artifacts\installer\PartitionManager-0.5.1-preview-x64-setup.exe -ErrorAction SilentlyContinue
+    $files = Get-Item artifacts\publish\PartitionManager.exe, artifacts\publish\PartitionManager.Helper.exe, artifacts\installer\PartitionManager-0.6.0-preview-x64-setup.exe -ErrorAction SilentlyContinue
     $files | ForEach-Object { '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $_.Name } |
         Set-Content artifacts\checksums\SHA256SUMS.txt -Encoding ascii
     $files | ForEach-Object {

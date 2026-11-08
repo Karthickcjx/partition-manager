@@ -12,7 +12,7 @@ public interface IHelperPolicySource
 /// <summary>
 /// Loads the write policy from HKLM\SOFTWARE\PartitionManager\Helper, which only administrators can change.
 /// Missing, unreadable or unrecognised values mean Disabled.
-///   WriteMode         REG_SZ        "Disabled" | "VirtualDisksOnly"
+///   WriteMode         REG_SZ        "Disabled" | "VirtualDisksOnly" | "AllDisks" (installer default from 0.6)
 ///   AllowedImageRoots REG_MULTI_SZ  folders such as D:\pm-testdisks
 ///   PhysicalTestDiskIds REG_MULTI_SZ  TEST MACHINES ONLY: MSFT_Disk.UniqueId of physical disks enrolled for in-place shrink/extend
 /// </summary>
