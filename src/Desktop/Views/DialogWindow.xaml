@@ -1,0 +1,40 @@
+<Window x:Class="PartitionManager.Desktop.Views.DialogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding Title}" Width="520" SizeToContent="Height" ResizeMode="CanResizeWithGrip" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+        FontFamily="{StaticResource UiFont}" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="52" ResizeBorderThickness="0" GlassFrameThickness="0" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" KeyboardNavigation.TabNavigation="Cycle">
+        <StackPanel>
+            <DockPanel Height="52" Margin="24,0,8,0">
+                <Button x:Name="CloseButton" DockPanel.Dock="Right" Style="{StaticResource TitleBarButton}" Content="&#xE8BB;" Click="Cancel_Click"
+                        WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Close" Focusable="False"
+                        Visibility="{Binding ShowFooter, Converter={StaticResource BoolToVisibility}}" />
+                <TextBlock Text="{Binding Title}" Style="{StaticResource TextSubtitle}" FontSize="16" VerticalAlignment="Center" />
+            </DockPanel>
+
+            <ContentPresenter x:Name="DialogBody" Content="{Binding}" Margin="24,4,24,0" />
+
+            <Border Background="{DynamicResource DangerSoftBrush}" CornerRadius="8" Padding="12,8" Margin="24,14,24,0"
+                    Visibility="{Binding Error, Converter={StaticResource NotEmptyToVisibility}}">
+                <DockPanel>
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE7BA;" FontSize="14" Foreground="{DynamicResource DangerBrush}" VerticalAlignment="Top" Margin="0,2,8,0" />
+                    <TextBlock Text="{Binding Error}" Style="{StaticResource Text}" FontSize="13" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" TextTrimming="None" />
+                </DockPanel>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="24,22,24,22"
+                        Visibility="{Binding ShowFooter, Converter={StaticResource BoolToVisibility}}">
+                <Button x:Name="SecondaryButton" Content="{Binding SecondaryText}" AutomationProperties.Name="{Binding SecondaryText}" IsCancel="True" Click="Cancel_Click" MinWidth="100" Margin="0,0,10,0"
+                        Visibility="{Binding SecondaryText, Converter={StaticResource NotEmptyToVisibility}}" />
+                <Button x:Name="PrimaryButton" Content="{Binding PrimaryText}" AutomationProperties.Name="{Binding PrimaryText}" IsDefault="True" Click="Primary_Click" MinWidth="120" Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+            <Border Height="22" Visibility="{Binding ShowFooter, Converter={StaticResource BoolToVisibility}, ConverterParameter=invert}" />
+        </StackPanel>
+        </ScrollViewer>
+    </Border>
+</Window>

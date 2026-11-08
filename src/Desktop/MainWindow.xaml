@@ -1,0 +1,119 @@
+<Window x:Class="PartitionManager.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:PartitionManager.Desktop.ViewModels"
+        Title="Partition Manager" Width="1240" Height="780" MinWidth="1000" MinHeight="640"
+        WindowStartupLocation="CenterScreen" Icon="Assets/app.ico"
+        Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+        FontFamily="{StaticResource UiFont}" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="56" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
+    <Grid x:Name="Root">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Title bar -->
+        <Grid Grid.Row="0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0">
+                <Image Source="Assets/app.ico" Width="24" Height="24" RenderOptions.BitmapScalingMode="HighQuality" />
+                <TextBlock Text="Partition Manager" Style="{StaticResource TextSubtitle}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                <Border Style="{StaticResource Chip}" Margin="12,0,0,0" ToolTip="No changes are ever written to disk in this version.">
+                    <TextBlock Text="{Binding ModeText}" Style="{StaticResource ChipText}" />
+                </Border>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                <Button Style="{StaticResource IconButton}" Height="40" Content="{Binding ThemeGlyph}" Command="{Binding ToggleThemeCommand}"
+                        WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Switch light/dark theme" AutomationProperties.Name="Switch theme" Margin="0,8,0,0" />
+                <Button x:Name="MenuButton" Style="{StaticResource IconButton}" Height="40" Content="&#xE700;" Click="MenuButton_Click"
+                        WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Menu" AutomationProperties.Name="Menu" Margin="0,8,8,0">
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Refresh disks" Icon="&#xE72C;" InputGestureText="F5" Command="{Binding PartitionManager.RefreshCommand}" />
+                            <MenuItem Header="Open log folder" Icon="&#xE8B7;" Command="{Binding OpenLogsCommand}" />
+                            <Separator />
+                            <MenuItem Header="About" Icon="&#xE946;" Command="{Binding AboutCommand}" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+                <Border Width="1" Height="20" Background="{DynamicResource BorderBrush}" Margin="0,8,8,0" VerticalAlignment="Center" />
+                <Button Style="{StaticResource TitleBarButton}" Content="&#xE921;" Click="Minimize_Click" WindowChrome.IsHitTestVisibleInChrome="True"
+                        AutomationProperties.Name="Minimize" ToolTip="Minimize" />
+                <Button x:Name="MaxButton" Style="{StaticResource TitleBarButton}" Content="&#xE922;" Click="Maximize_Click" WindowChrome.IsHitTestVisibleInChrome="True"
+                        AutomationProperties.Name="Maximize" ToolTip="Maximize" />
+                <Button Style="{StaticResource TitleBarButton}" Content="&#xE8BB;" Click="Close_Click" WindowChrome.IsHitTestVisibleInChrome="True"
+                        AutomationProperties.Name="Close" ToolTip="Close" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Body -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="264" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <DockPanel Grid.Column="0" Margin="12,4,12,16">
+                <StackPanel DockPanel.Dock="Bottom" Margin="10,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding PrivilegeText}" Style="{StaticResource TextCaption}" Margin="8,0,0,0" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8D7;" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <TextBlock Text="Read-only · simulated operations" Style="{StaticResource TextCaption}" Margin="8,0,0,0" />
+                    </StackPanel>
+                </StackPanel>
+
+                <ListBox ItemsSource="{Binding Navigation}" SelectedItem="{Binding Current}" Background="Transparent" BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Sections" KeyboardNavigation.TabNavigation="Once">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Margin" Value="0,0,0,6" />
+                            <Setter Property="Cursor" Value="Hand" />
+                            <Setter Property="AutomationProperties.Name" Value="{Binding AutomationName}" />
+                            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="Bd" Background="Transparent" CornerRadius="10" Padding="18,0" Height="60">
+                                            <Grid>
+                                                <Border x:Name="Marker" Width="3" Height="22" CornerRadius="2" HorizontalAlignment="Left" Margin="-12,0,0,0"
+                                                        Background="{DynamicResource AccentBrush}" Visibility="Collapsed" />
+                                                <ContentPresenter VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NavHoverBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NavSelectedBrush}" />
+                                                <Setter TargetName="Marker" Property="Visibility" Value="Visible" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:NavItem}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="{Binding Glyph}" FontSize="20" Foreground="{DynamicResource AccentBrush}" Width="24" />
+                                <TextBlock Text="{Binding Title}" Style="{StaticResource Text}" FontWeight="SemiBold" Margin="14,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+
+            <Border Grid.Column="1" Style="{StaticResource Card}" Margin="0,4,18,18">
+                <ContentControl Content="{Binding CurrentPage}" Focusable="False" />
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

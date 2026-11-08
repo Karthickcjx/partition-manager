@@ -1,0 +1,36 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <LinearGradientBrush x:Key="WindowBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#EEF2FD" Offset="0" />
+        <GradientStop Color="#F4F1FB" Offset="0.6" />
+        <GradientStop Color="#F7EFF8" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="SurfaceAltBrush" Color="#F5F7FE" />
+    <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#EEF2FD" />
+    <SolidColorBrush x:Key="NavHoverBrush" Color="#99FFFFFF" />
+    <SolidColorBrush x:Key="NavSelectedBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="BorderBrush" Color="#E4E9F6" />
+    <SolidColorBrush x:Key="DividerBrush" Color="#EDF1FB" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#1D2027" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#6C7BA1" />
+    <SolidColorBrush x:Key="TextDisabledBrush" Color="#AEB6CC" />
+    <SolidColorBrush x:Key="TextOnAccentBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="AccentBrush" Color="#4F80FD" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#3E6FF0" />
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="#315DD6" />
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#E9F0FF" />
+    <SolidColorBrush x:Key="DangerBrush" Color="#E5484D" />
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="#FDECEC" />
+    <SolidColorBrush x:Key="WarningBrush" Color="#D9890B" />
+    <SolidColorBrush x:Key="WarningSoftBrush" Color="#FFF4DC" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="#21A366" />
+    <SolidColorBrush x:Key="SuccessSoftBrush" Color="#E3F6EC" />
+    <SolidColorBrush x:Key="SegmentDataBrush" Color="#4F80FD" />
+    <SolidColorBrush x:Key="SegmentSystemBrush" Color="#8C99BD" />
+    <SolidColorBrush x:Key="SegmentUnallocatedBrush" Color="#C9CFDD" />
+    <SolidColorBrush x:Key="SegmentTrackBrush" Color="#DCE5FF" />
+    <SolidColorBrush x:Key="SegmentEncryptedBrush" Color="#9D6BFF" />
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="#C6CDE0" />
+    <Color x:Key="ShadowColor">#1A3A5BC7</Color>
+</ResourceDictionary>

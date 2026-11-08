@@ -1,0 +1,135 @@
+﻿{
+    "CapturedUtc":  "2026-11-07T09:43:02.1689766+00:00",
+    "CapturedIndiaTime":  "2026-11-07T15:13:02.1689766+05:30",
+    "Purpose":  "Read-only planning evidence; NOT a physical-write authorization",
+    "PhysicalWritesEnabled":  false,
+    "Disks":  [
+                  {
+                      "Number":  0,
+                      "UniqueId":  "eui.001B448B4A510562",
+                      "SerialNumber":  "E823_8FA6_BF53_0001_001B_448B_4A51_0562.",
+                      "Size":  512110190592,
+                      "PartitionStyle":  "GPT",
+                      "BusType":  "NVMe",
+                      "LogicalSectorSize":  512,
+                      "PhysicalSectorSize":  512,
+                      "IsBoot":  true,
+                      "IsSystem":  true
+                  }
+              ],
+    "Partitions":  [
+                       {
+                           "DiskNumber":  0,
+                           "PartitionNumber":  1,
+                           "DriveLetter":  null,
+                           "Offset":  1048576,
+                           "Size":  272629760,
+                           "Guid":  "{5ae146b7-7011-4d5c-957b-226d0d1aa99c}",
+                           "GptType":  "{c12a7328-f81f-11d2-ba4b-00a0c93ec93b}",
+                           "IsBoot":  false,
+                           "IsSystem":  true,
+                           "IsHidden":  true,
+                           "AccessPaths":  [
+                                               "\\\\?\\Volume{5ae146b7-7011-4d5c-957b-226d0d1aa99c}\\"
+                                           ]
+                       },
+                       {
+                           "DiskNumber":  0,
+                           "PartitionNumber":  2,
+                           "DriveLetter":  null,
+                           "Offset":  273678336,
+                           "Size":  16777216,
+                           "Guid":  "{1fe50344-4312-4d29-893c-5352769f756d}",
+                           "GptType":  "{e3c9e316-0b5c-4db8-817d-f92df00215ae}",
+                           "IsBoot":  false,
+                           "IsSystem":  false,
+                           "IsHidden":  true,
+                           "AccessPaths":  null
+                       },
+                       {
+                           "DiskNumber":  0,
+                           "PartitionNumber":  3,
+                           "DriveLetter":  "C",
+                           "Offset":  290455552,
+                           "Size":  160660004352,
+                           "Guid":  "{d1901445-9774-4da0-98fc-940bb9a65be2}",
+                           "GptType":  "{ebd0a0a2-b9e5-4433-87c0-68b6b72699c7}",
+                           "IsBoot":  true,
+                           "IsSystem":  false,
+                           "IsHidden":  false,
+                           "AccessPaths":  [
+                                               "C:\\",
+                                               "\\\\?\\Volume{d1901445-9774-4da0-98fc-940bb9a65be2}\\"
+                                           ]
+                       },
+                       {
+                           "DiskNumber":  0,
+                           "PartitionNumber":  4,
+                           "DriveLetter":  null,
+                           "Offset":  160951173120,
+                           "Size":  1062207488,
+                           "Guid":  "{a612f4ab-962b-4b46-a8d3-9c7cce0859b8}",
+                           "GptType":  "{de94bba4-06d1-4d40-a16a-bfd50179d6ac}",
+                           "IsBoot":  false,
+                           "IsSystem":  false,
+                           "IsHidden":  true,
+                           "AccessPaths":  [
+                                               "\\\\?\\Volume{a612f4ab-962b-4b46-a8d3-9c7cce0859b8}\\"
+                                           ]
+                       },
+                       {
+                           "DiskNumber":  0,
+                           "PartitionNumber":  5,
+                           "DriveLetter":  "D",
+                           "Offset":  162014429184,
+                           "Size":  289962721280,
+                           "Guid":  "{22bb73cb-7f6b-46ae-8aca-c3c399c2ad3e}",
+                           "GptType":  "{ebd0a0a2-b9e5-4433-87c0-68b6b72699c7}",
+                           "IsBoot":  false,
+                           "IsSystem":  false,
+                           "IsHidden":  false,
+                           "AccessPaths":  [
+                                               "D:\\",
+                                               "\\\\?\\Volume{22bb73cb-7f6b-46ae-8aca-c3c399c2ad3e}\\"
+                                           ]
+                       },
+                       {
+                           "DiskNumber":  0,
+                           "PartitionNumber":  7,
+                           "DriveLetter":  "E",
+                           "Offset":  451977150464,
+                           "Size":  59860058112,
+                           "Guid":  "{9be001de-fec0-4988-adb6-2508a3d49b9d}",
+                           "GptType":  "{ebd0a0a2-b9e5-4433-87c0-68b6b72699c7}",
+                           "IsBoot":  false,
+                           "IsSystem":  false,
+                           "IsHidden":  false,
+                           "AccessPaths":  [
+                                               "E:\\",
+                                               "\\\\?\\Volume{9be001de-fec0-4988-adb6-2508a3d49b9d}\\"
+                                           ]
+                       },
+                       {
+                           "DiskNumber":  0,
+                           "PartitionNumber":  6,
+                           "DriveLetter":  null,
+                           "Offset":  511837208576,
+                           "Size":  272629760,
+                           "Guid":  "{794e56b7-d849-4ed0-8162-be34e83f3e16}",
+                           "GptType":  "{de94bba4-06d1-4d40-a16a-bfd50179d6ac}",
+                           "IsBoot":  false,
+                           "IsSystem":  false,
+                           "IsHidden":  true,
+                           "AccessPaths":  [
+                                               "\\\\?\\Volume{794e56b7-d849-4ed0-8162-be34e83f3e16}\\"
+                                           ]
+                       }
+                   ],
+    "CandidateScope":  {
+                           "OriginalEndExclusiveBytes":  511837208576,
+                           "OriginalStartBytes":  451977150464,
+                           "OriginalSizeBytes":  59860058112,
+                           "PartitionGuid":  "{9be001de-fec0-4988-adb6-2508a3d49b9d}",
+                           "DiskUniqueId":  "eui.001B448B4A510562"
+                       }
+}

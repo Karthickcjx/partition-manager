@@ -1,0 +1,33 @@
+<Application x:Class="PartitionManager.Desktop.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:PartitionManager.Desktop.ViewModels"
+             xmlns:views="clr-namespace:PartitionManager.Desktop.Views"
+             xmlns:conv="clr-namespace:PartitionManager.Desktop.Converters"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Light.xaml" />
+                <ResourceDictionary Source="Themes/Controls.xaml" />
+                <ResourceDictionary Source="Views/DialogTemplates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+            <conv:NotEmptyToVisibilityConverter x:Key="NotEmptyToVisibility" />
+
+            <DataTemplate DataType="{x:Type vm:PartitionManagerViewModel}">
+                <views:PartitionManagerView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:DiskInfoViewModel}">
+                <views:DiskInfoView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:DataRecoveryViewModel}">
+                <views:DataRecoveryView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:FeaturePageViewModel}">
+                <views:FeaturePageView />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

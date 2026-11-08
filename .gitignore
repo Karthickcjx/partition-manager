@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+*.user
+TestResults/
+artifacts/
+# Screenshots of the third-party reference application contain its proprietary artwork; keep them local.
+docs/reference-screenshots/
+docs/screenshots/tmp-*.png

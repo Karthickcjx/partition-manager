@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Validation tool only, never shipped or installed: drives one real Move through the production WriteEngine on a
+       disposable VHDX in the test VM, to validate the Windows block-I/O path before it is exercised through the app. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AssemblyName>RelocationProbe</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <StartupHookSupport>false</StartupHookSupport>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/PrivilegedHelper/PartitionManager.PrivilegedHelper.csproj" />
+    <ProjectReference Include="../../src/Infrastructure/PartitionManager.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

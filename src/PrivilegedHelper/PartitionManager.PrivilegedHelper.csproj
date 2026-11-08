@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>PartitionManager.PrivilegedHelper</RootNamespace>
+    <AssemblyName>PartitionManager.Helper</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\Desktop\Assets\app.ico</ApplicationIcon>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <!-- Security: an elevated process inherits the user's environment through UAC, and DOTNET_STARTUP_HOOKS would make the
+         runtime load arbitrary assemblies before Main. Verified exploitable on the installed 0.5.0-preview helper. -->
+    <StartupHookSupport>false</StartupHookSupport>
+    <!-- Security: never extract native libraries to a (user-writable) temp directory at startup. -->
+    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="PartitionManager.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Core\PartitionManager.Core.csproj" />
+    <ProjectReference Include="..\Infrastructure\PartitionManager.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

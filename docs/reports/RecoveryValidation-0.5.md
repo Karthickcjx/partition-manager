@@ -1,0 +1,13 @@
+# Recovery validation — 0.5.0-preview
+
+Update: [GPT/MBR journal integration now passes](ProductionHardening-20261107.md). This supersedes the canceled integration run below; actual interruption during native storage mutation and hardware power-loss recovery remain unproven.
+
+The shipped helper now requires a protected operation journal. Each operation records its ID, request and disk identity, initial layout, intended layout, step intent, observed post-step layout, final verification or failure, and recovery guidance. Records use `WriteThrough` and `Flush(true)` before each mutating backend call; a process-lifetime exclusive lock serializes journal writers. Before each mutation, discovery must still match the expected virtual disk identity/layout and backing path.
+
+On restart, any interrupted, failed, empty, oversized, torn or corrupt history blocks further real operations globally with `RECOVERY_REVIEW_REQUIRED`. No operation is replayed. A completed initialization consumes approval for that image path. A SHA-256 chain catches accidental modification; it does not authenticate history against administrators or prevent privileged deletion/rollback of the directory.
+
+Tests cover durable success, a separately launched process terminated after flushing step intent, restart refusal, corrupt/torn records, concurrent writer rejection, failures at journal checkpoints, and a partial split failure. The terminated child is a file-journal probe with no storage backend, not a real elevated helper mutating a disk. Fault injection is not a physical power-loss test. A new GPT/MBR real-VHDX journal test is implemented but its elevated run was canceled before execution.
+
+There is **no atomic rollback, automatic recovery, safe retry button, or supported journal-clear workflow**. Retain the journal and image, stop writes, independently inspect the disk and restore from a verified backup when necessary. `scripts/inspect-operation-journals.ps1` summarizes records read-only; it does not certify hashes or resolve recovery blocks. The helper performs integrity checks. Do not delete journals to bypass a block.
+
+The intended layout is predictive (new identifiers may not yet exist); observed layouts are separate evidence. Successful return from storage APIs is not file-content verification. Real VHDX hash verification remains a separate integration gate. Flush requests improve process-crash durability but do not prove survival of hardware/controller cache or power failures. See Microsoft's [FlushFileBuffers documentation](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers).

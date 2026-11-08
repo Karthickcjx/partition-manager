@@ -1,0 +1,111 @@
+<UserControl x:Class="PartitionManager.Desktop.Views.DiskInfoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:PartitionManager.Desktop.ViewModels">
+    <Grid Margin="28,22,28,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <DockPanel Grid.ColumnSpan="2" Margin="0,0,0,16">
+            <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}" AutomationProperties.Name="Refresh">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="14" Foreground="{DynamicResource AccentBrush}" />
+                    <TextBlock Text="Refresh" Margin="8,0,0,0" />
+                </StackPanel>
+            </Button>
+            <TextBlock Text="Disk Information" Style="{StaticResource TextTitle}" />
+        </DockPanel>
+
+        <ListBox Grid.Row="1" ItemsSource="{Binding Disks}" SelectedItem="{Binding Selected}" Background="Transparent" BorderThickness="0"
+                 AutomationProperties.Name="Disks">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Margin" Value="0,0,0,8" />
+                    <Setter Property="Cursor" Value="Hand" />
+                    <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <Border x:Name="Bd" CornerRadius="10" Padding="14,12" Background="{DynamicResource SurfaceAltBrush}" BorderThickness="2" BorderBrush="Transparent">
+                                    <ContentPresenter />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource SurfaceHoverBrush}" /></Trigger>
+                                    <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:DiskDetailViewModel}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xEDA2;" FontSize="22" Foreground="{DynamicResource AccentBrush}" />
+                        <StackPanel Margin="12,0,0,0">
+                            <TextBlock Text="{Binding Disk.Title}" Style="{StaticResource Text}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding Disk.Model}" Style="{StaticResource TextCaption}" MaxWidth="210" />
+                        </StackPanel>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <ScrollViewer Grid.Row="1" Grid.Column="1" Margin="20,0,0,0" VerticalScrollBarVisibility="Auto" DataContext="{Binding}">
+            <StackPanel>
+                <Border Style="{StaticResource SubCard}" DataContext="{Binding Selected}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource TextSubtitle}" Margin="0,0,0,12" />
+                        <ItemsControl ItemsSource="{Binding Rows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="170" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}" Style="{StaticResource TextSecondary}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Value}" Style="{StaticResource Text}" FontSize="13" TextWrapping="Wrap" TextTrimming="None" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SubCard}" Margin="0,12,0,0" DataContext="{Binding Selected}"
+                        Visibility="{Binding HasIssues, Converter={StaticResource BoolToVisibility}}" Background="{DynamicResource WarningSoftBrush}">
+                    <StackPanel>
+                        <TextBlock Text="Layout check" Style="{StaticResource TextSubtitle}" Foreground="{DynamicResource WarningBrush}" Margin="0,0,0,6" />
+                        <ItemsControl ItemsSource="{Binding Issues}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding}" Style="{StaticResource Text}" FontSize="13" TextWrapping="Wrap" Margin="0,2" /></DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SubCard}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Verify partition table" Command="{Binding VerifyCommand}" />
+                            <StackPanel Margin="0,0,16,0">
+                                <TextBlock Text="Raw partition table check" Style="{StaticResource TextSubtitle}" />
+                                <TextBlock Text="{Binding VerifyHint}" Style="{StaticResource TextCaption}" TextWrapping="Wrap" TextTrimming="None" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </DockPanel>
+                        <TextBox Text="{Binding VerifyResult, Mode=OneWay}" IsReadOnly="True" Height="Auto" MinHeight="0" Padding="10,8" Margin="0,12,0,0"
+                                 FontFamily="Cascadia Mono, Consolas" FontSize="12" TextWrapping="Wrap"
+                                 Visibility="{Binding VerifyResult, Converter={StaticResource NotEmptyToVisibility}}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

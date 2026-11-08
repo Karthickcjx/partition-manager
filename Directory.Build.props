@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Keep one output folder whether built via the solution (Platform=x64) or a project file. -->
+    <AppendPlatformToOutputPath>false</AppendPlatformToOutputPath>
+    <Version>0.5.1-preview</Version>
+    <VersionSuffix>preview</VersionSuffix>
+    <InformationalVersion>0.5.1-preview</InformationalVersion>
+    <Company>Partition Manager (clean-room)</Company>
+    <Product>Partition Manager</Product>
+  </PropertyGroup>
+</Project>

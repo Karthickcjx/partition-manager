@@ -1,0 +1,111 @@
+<UserControl x:Class="PartitionManager.Desktop.Views.DataRecoveryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="28,22,28,22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Style="{StaticResource GhostButton}" Content="Deleted files" Command="{Binding ShowFilesCommand}" AutomationProperties.Name="Deleted files tab" />
+                <Button Style="{StaticResource GhostButton}" Content="Lost partitions" Command="{Binding ShowPartitionsCommand}" AutomationProperties.Name="Lost partitions tab" />
+            </StackPanel>
+            <TextBlock Text="Data Recovery" Style="{StaticResource TextTitle}" />
+        </DockPanel>
+
+        <Border Grid.Row="1" Background="{DynamicResource WarningSoftBrush}" CornerRadius="8" Padding="12,10" Margin="0,14,0,0">
+            <TextBlock Style="{StaticResource Text}" FontSize="13" Foreground="{DynamicResource WarningBrush}" TextWrapping="Wrap" TextTrimming="None" VerticalAlignment="Center"
+                       Text="Recovery reads the drive directly through the privileged helper, so Windows asks for administrator approval once. The app itself keeps running as you. Nothing on the scanned drive is changed." />
+        </Border>
+
+        <!-- Deleted files: source and actions -->
+        <Border Grid.Row="2" Style="{StaticResource SubCard}" Margin="0,14,0,0" Visibility="{Binding ShowFiles, Converter={StaticResource BoolToVisibility}}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButton}" Content="Scan" Command="{Binding ScanCommand}" Margin="10,0,0,0" MinWidth="90" />
+                    <Button Content="Cancel" Command="{Binding CancelCommand}" Margin="8,0,0,0" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="Drive to search for deleted files" Style="{StaticResource TextSecondary}" Margin="0,0,0,6" />
+                    <ComboBox ItemsSource="{Binding Volumes}" SelectedItem="{Binding Volume}" AutomationProperties.Name="Drive to scan" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Lost partitions: disk and actions -->
+        <Border Grid.Row="2" Style="{StaticResource SubCard}" Margin="0,14,0,0" Visibility="{Binding ShowPartitions, Converter={StaticResource BoolToVisibility}}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButton}" Content="Search unallocated space" Command="{Binding ScanPartitionsCommand}" Margin="10,0,0,0" />
+                    <Button Content="Cancel" Command="{Binding CancelCommand}" Margin="8,0,0,0" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="Disk to search for lost partitions" Style="{StaticResource TextSecondary}" Margin="0,0,0,6" />
+                    <ComboBox ItemsSource="{Binding Disks}" SelectedItem="{Binding Disk}" DisplayMemberPath="Model" AutomationProperties.Name="Disk to search" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <StackPanel Grid.Row="3" Margin="0,12,0,8">
+            <TextBlock Text="{Binding Status}" Style="{StaticResource TextSecondary}" TextWrapping="Wrap" TextTrimming="None" />
+            <ProgressBar Value="{Binding Progress, Mode=OneWay}" Maximum="100" Margin="0,8,0,0" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+        </StackPanel>
+
+        <!-- Deleted file results -->
+        <DockPanel Grid.Row="4" Visibility="{Binding ShowFiles, Converter={StaticResource BoolToVisibility}}">
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <CheckBox Content="Hide overwritten and unsupported" IsChecked="{Binding HideUnrecoverable}" Margin="0,0,14,0" />
+                    <Button Style="{StaticResource LinkButton}" Content="Select all shown" Command="{Binding SelectAllCommand}" Margin="0,0,12,0" VerticalAlignment="Center" />
+                    <Button Style="{StaticResource LinkButton}" Content="Clear" Command="{Binding SelectNoneCommand}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged, Delay=250}" Width="280" HorizontalAlignment="Left" AutomationProperties.Name="Filter by name or folder" />
+            </DockPanel>
+            <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="4,2">
+                <DataGrid ItemsSource="{Binding RowsView}" IsReadOnly="False" EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling" AutomationProperties.Name="Deleted files">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="" Width="40">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsRecoverable}" AutomationProperties.Name="{Binding Name}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Folder" Binding="{Binding Folder}" Width="2*" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" Width="*" IsReadOnly="True" SortMemberPath="SizeBytes" />
+                        <DataGridTextColumn Header="Modified" Binding="{Binding ModifiedText}" Width="1.2*" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Recovery chance" Binding="{Binding ChanceText}" Width="1.2*" IsReadOnly="True" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </DockPanel>
+
+        <!-- Lost partition results -->
+        <Border Grid.Row="4" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="4,2"
+                Visibility="{Binding ShowPartitions, Converter={StaticResource BoolToVisibility}}">
+            <DataGrid ItemsSource="{Binding FoundPartitions}" AutomationProperties.Name="Lost partitions">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Start" Binding="{Binding OffsetText}" Width="2*" />
+                    <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" Width="*" />
+                    <DataGridTextColumn Header="File system" Binding="{Binding FileSystem}" Width="*" />
+                    <DataGridTextColumn Header="Confidence" Binding="{Binding Confidence}" Width="*" />
+                    <DataGridTextColumn Header="Evidence" Binding="{Binding Evidence}" Width="2.5*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <DockPanel Grid.Row="5" Margin="0,12,0,0" Visibility="{Binding ShowFiles, Converter={StaticResource BoolToVisibility}}">
+            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Recover selected" Command="{Binding RecoverCommand}" MinWidth="160" Height="40" />
+            <TextBlock Style="{StaticResource TextCaption}" VerticalAlignment="Center" TextWrapping="Wrap" TextTrimming="None"
+                       Text="Recovered files are saved to a folder on a different drive, so the files being recovered are never overwritten." />
+        </DockPanel>
+    </Grid>
+</UserControl>

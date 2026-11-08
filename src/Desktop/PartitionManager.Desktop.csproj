@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>PartitionManager.Desktop</RootNamespace>
+    <AssemblyName>PartitionManager</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <!-- Defence in depth: the app never needs startup hooks. -->
+    <StartupHookSupport>false</StartupHookSupport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Core\PartitionManager.Core.csproj" />
+    <ProjectReference Include="..\Infrastructure\PartitionManager.Infrastructure.csproj" />
+    <!-- Build order only: the helper is a separate elevated process and must not be referenced as a library. -->
+    <ProjectReference Include="..\PrivilegedHelper\PartitionManager.PrivilegedHelper.csproj" ReferenceOutputAssembly="false" Private="false" />
+  </ItemGroup>
+  <!-- The helper only accepts a client exe from its own folder, so place it next to the app for dev builds. -->
+  <Target Name="CopyPrivilegedHelper" AfterTargets="Build">
+    <ItemGroup>
+      <HelperFiles Include="..\PrivilegedHelper\bin\$(Configuration)\net8.0-windows\win-x64\PartitionManager.Helper.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(HelperFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

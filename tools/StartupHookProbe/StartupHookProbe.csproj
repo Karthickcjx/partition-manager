@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Security test probe only. A .NET startup hook that writes a marker file named by PM_HOOK_MARKER and does
+       nothing else. Used to check whether the installed elevated helper executes startup hooks from the environment. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>StartupHookProbe</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>

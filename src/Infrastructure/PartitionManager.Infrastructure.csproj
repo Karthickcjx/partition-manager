@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>PartitionManager.Infrastructure</RootNamespace>
+    <AssemblyName>PartitionManager.Infrastructure</AssemblyName>  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="PartitionManager.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Core\PartitionManager.Core.csproj" />
+  </ItemGroup>
+</Project>

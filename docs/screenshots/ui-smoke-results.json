@@ -1,0 +1,82 @@
+﻿[
+    {
+        "Check":  "Main window opens",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Disk discovery shows the boot volume",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Deleting C: is blocked by the safety policy",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Resize dialog opens",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Shrink task queued",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Freed space appears as unallocated",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Create dialog opens",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Create task queued",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Execute asks for confirmation with target disk identity",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Physical-disk tasks are routed to simulation",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Progress dialog shows",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Simulation completes",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Simulated-result banner is shown",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Disk Information page loads",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Data Recovery page loads with a Scan action",
+        "Result":  "PASS",
+        "Detail":  ""
+    },
+    {
+        "Check":  "Data Recovery offers elevation when not administrator",
+        "Result":  "PASS",
+        "Detail":  ""
+    }
+]
